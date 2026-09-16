@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Customer Intelligence — Insurance Retention Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF8F3;
+  --bg-soft:#F1EDE3;
+  --panel:#FFFFFF;
+  --panel-2:#ECE7DA;
+  --line:rgba(30,27,22,0.12);
+  --ink:#211E19;
+  --muted:#6B6558;
+  --muted-2:#8A8474;
+  --gold:#B07A22;
+  --teal:#237F79;
+  --blue:#3A63B8;
+  --green:#2E8F63;
+  --amber:#B4842A;
+  --orange:#BD5B2E;
+  --red:#C23B31;
+  --grey-blue:#6B7090;
+  --mustard:#93761E;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',sans-serif;
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:600;margin:0 0 8px 0;letter-spacing:-0.01em;}
+h1{font-size:30px;}
+h2{font-size:24px;}
+h3{font-size:18px;}
+p{margin:0 0 12px 0;color:var(--ink);}
+.muted{color:var(--muted);}
+a{color:var(--teal);}
+button{font-family:'Inter',sans-serif;cursor:pointer;}
+select,input[type=text]{font-family:'Inter',sans-serif;}
+
+/* ===== App shell ===== */
+#app{max-width:980px;margin:0 auto;padding:0 20px 120px 20px;}
+header.top{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(180deg, var(--bg) 78%, transparent);
+  padding:18px 0 10px 0;
+}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.brand{display:flex;align-items:baseline;gap:10px;}
+.brand .mark{
+  width:10px;height:10px;border-radius:50%;background:var(--gold);
+  display:inline-block;box-shadow:0 0 0 4px rgba(217,164,65,0.15);
+}
+.brand-text{font-family:'Fraunces',serif;font-size:15px;letter-spacing:0.02em;color:var(--muted);}
+.jump-wrap select{
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  padding:8px 10px;border-radius:10px;font-size:13px;max-width:260px;
+}
+.progress-line{height:3px;background:var(--panel);border-radius:3px;margin-top:12px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));transition:width .3s ease;}
+
+/* ===== Screens ===== */
+.screen{display:none;padding-top:26px;animation:fade .35s ease;}
+.screen.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.eyebrow{font-size:12.5px;color:var(--gold);margin-bottom:6px;}
+.lede{font-size:17px;color:var(--muted);max-width:640px;margin-bottom:20px;}
+
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;margin-bottom:16px;
+}
+.card.soft{background:var(--bg-soft);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.field label{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;}
+.field select{background:var(--bg-soft);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;border-radius:4px;background:var(--panel-2);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--gold);cursor:pointer;border:2px solid var(--bg);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--gold);cursor:pointer;border:2px solid var(--bg);}
+.checkline{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);margin-bottom:10px;}
+.checkline input{accent-color:var(--gold);}
+
+.btn{
+  background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
+  padding:9px 16px;border-radius:9px;font-size:13.5px;font-weight:600;transition:.15s;
+}
+.btn:hover{border-color:var(--gold);}
+.btn.primary{background:var(--gold);color:#1a1406;border-color:var(--gold);}
+.btn.primary:hover{filter:brightness(1.08);}
+.btn.ghost{background:transparent;}
+.btn:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:100px;font-size:12.5px;font-weight:700;}
+.tag{display:inline-block;padding:3px 9px;border-radius:100px;font-size:11.5px;font-weight:700;letter-spacing:.02em;}
+
+/* segment colors */
+.seg-loyal{background:rgba(63,174,122,.16);color:var(--green);}
+.seg-atrisk{background:rgba(224,118,58,.16);color:var(--orange);}
+.seg-price{background:rgba(201,162,39,.18);color:var(--mustard);}
+.seg-growth{background:rgba(91,143,224,.16);color:var(--blue);}
+.seg-recovery{background:rgba(226,87,76,.16);color:var(--red);}
+.seg-low{background:rgba(139,144,174,.18);color:var(--grey-blue);}
+
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.dot.red{background:var(--red);} .dot.amber{background:var(--amber);} .dot.green{background:var(--green);}
+
+.reason-line{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.8px;}
+.reason-line:last-child{border-bottom:none;}
+
+/* gauge */
+.gauge-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.gauge{
+  width:132px;height:132px;border-radius:50%;position:relative;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.gauge .hole{
+  width:96px;height:96px;border-radius:50%;background:var(--panel);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.gauge .num{font-family:'Fraunces',serif;font-size:26px;font-weight:600;}
+.gauge .lab{font-size:10.5px;color:var(--muted);letter-spacing:.03em;}
+
+table{width:100%;border-collapse:collapse;font-size:13.8px;}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:12px;}
+tr.clickable{cursor:pointer;}
+tr.clickable:hover{background:var(--panel-2);}
+
+.matrix{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;height:420px;position:relative;}
+.quad{border-radius:12px;position:relative;padding:12px;overflow:hidden;}
+.quad h4{font-size:13px;margin-bottom:2px;}
+.quad .sub{font-size:11.5px;color:var(--muted);}
+.quad-dot{
+  position:absolute;width:11px;height:11px;border-radius:50%;
+  border:2px solid var(--bg);cursor:pointer;transition:transform .15s;
+}
+.quad-dot:hover{transform:scale(1.5);z-index:5;}
+.axis-label{position:absolute;font-size:11px;color:var(--muted-2);letter-spacing:.03em;}
+
+details.facilitator{
+  margin-top:14px;background:var(--bg-soft);border:1px dashed var(--line);
+  border-radius:10px;padding:2px 14px;
+}
+details.facilitator summary{cursor:pointer;font-size:12.5px;color:var(--teal);padding:10px 0;font-weight:600;}
+.facilitator .fline{margin-bottom:8px;font-size:13.5px;}
+.facilitator .flabel{color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.02em;display:block;margin-bottom:2px;}
+
+.bubble{
+  background:var(--bg-soft);border-radius:14px 14px 14px 3px;padding:14px 16px;
+  max-width:520px;font-size:14.5px;font-style:italic;color:var(--ink);border:1px solid var(--line);
+}
+.reveal-box{
+  border:1px solid var(--gold);background:rgba(217,164,65,0.08);border-radius:12px;
+  padding:14px 16px;margin-top:12px;display:none;
+}
+.reveal-box.show{display:block;}
+
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:13.5px;margin:12px 0;}
+.flow .step{background:var(--panel-2);padding:7px 12px;border-radius:9px;}
+.flow .arrow{color:var(--muted-2);}
+
+footer.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  background:rgba(250,248,243,0.92);backdrop-filter:blur(8px);
+  border-top:1px solid var(--line);
+}
+.nav-inner{max-width:980px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.nav-title{font-size:12.5px;color:var(--muted);text-align:center;flex:1;}
+.nav-title strong{color:var(--ink);}
+.small-note{font-size:12px;color:var(--muted-2);margin-top:6px;}
+.opt-btn{display:block;width:100%;text-align:left;background:var(--bg-soft);border:1px solid var(--line);color:var(--ink);
+  padding:11px 14px;border-radius:10px;margin-bottom:8px;font-size:13.8px;}
+.opt-btn:hover{border-color:var(--gold);}
+.opt-btn.picked{border-color:var(--gold);background:rgba(217,164,65,0.10);}
+.stat-big{font-family:'Fraunces',serif;font-size:34px;font-weight:600;}
+.stat-lab{font-size:12px;color:var(--muted);}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px;}
+.bar-track{flex:1;height:9px;background:var(--panel-2);border-radius:6px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:6px;}
+.illustrative{font-size:11.5px;color:var(--gold);border:1px solid var(--gold);display:inline-block;padding:2px 8px;border-radius:100px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div class="top-row">
+      <div class="brand"><span class="mark"></span><span class="brand-text">AI Customer Intelligence &nbsp;·&nbsp; Insurance Retention Simulator</span></div>
+      <div class="jump-wrap">
+        <select id="jumpSelect"></select>
+      </div>
+    </div>
+    <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
+  </header>
+
+  <!-- ================= SCREEN 0 : INTRO / POLL ================= -->
+  <section class="screen" data-id="intro">
+    <div class="eyebrow">Opening question</div>
+    <h1>Should 1 million customers all be treated the same way?</h1>
+    <p class="lede">Before we talk about AI, let's start with a business question every insurer already faces.</p>
+    <div class="card">
+      <p style="color:var(--muted);font-size:13.5px;margin-bottom:14px;">Click the answer your table agrees with. There's no wrong answer — we'll come back to this.</p>
+      <div id="introOptions"></div>
+      <div class="reveal-box" id="introReveal">
+        <strong>Most rooms split across "Depends on customer type" and "Depends on the product."</strong>
+        <p style="margin-top:8px;">That instinct — <em>"it depends"</em> — is exactly what customer segmentation formalizes. Insurers have always known customers differ. AI just makes it possible to act on that at scale, for every customer, every day, instead of only for the accounts a relationship manager happens to know well.</p>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Read the question aloud. Don't explain AI yet.</div>
+      <div class="fline"><span class="flabel">CLICK</span>Let 3–4 participants answer in chat or by clicking, then reveal the note.</div>
+      <div class="fline"><span class="flabel">ASK</span>"What would it take to actually act on 'it depends' for a million customers?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>The business need for segmentation exists before any mention of AI.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's look at what changes when we stop treating everyone the same."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 1 : TRADITIONAL VS AI ================= -->
+  <section class="screen" data-id="approach">
+    <div class="eyebrow">The shift</div>
+    <h1>From one-size-fits-all to one-customer-at-a-time</h1>
+    <p class="lede">This is the entire idea of the next two hours, in one picture.</p>
+    <div class="grid2">
+      <div class="card soft">
+        <h3 style="color:var(--muted-2);">Traditional approach</h3>
+        <div class="flow">
+          <span class="step">All customers</span><span class="arrow">→</span>
+          <span class="step">Same campaign</span><span class="arrow">→</span>
+          <span class="step">Same message</span><span class="arrow">→</span>
+          <span class="step">Same treatment</span>
+        </div>
+        <p class="muted" style="font-size:13px;">Efficient to run. Expensive in a different way — it wastes attention on customers who didn't need it, and misses the ones who did.</p>
+      </div>
+      <div class="card" style="border-color:var(--gold);">
+        <h3 style="color:var(--gold);">AI-enabled approach</h3>
+        <div class="flow">
+          <span class="step">Customer data</span><span class="arrow">→</span>
+          <span class="step">Understand</span><span class="arrow">→</span>
+          <span class="step">Segment</span><span class="arrow">→</span>
+          <span class="step">Predict behaviour</span><span class="arrow">→</span>
+          <span class="step">Personalize action</span>
+        </div>
+        <p class="muted" style="font-size:13px;">Same customer base. Different question asked of the data at every step: <em>who is this customer, right now?</em></p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>The business flow we'll build, end to end</h3>
+      <div class="flow">
+        <span class="step">Customer Data</span><span class="arrow">→</span><span class="step">Segmentation</span><span class="arrow">→</span>
+        <span class="step">Behaviour</span><span class="arrow">→</span><span class="step">Churn / Retention Risk</span><span class="arrow">→</span>
+        <span class="step">Reason</span><span class="arrow">→</span><span class="step">Next Best Action</span><span class="arrow">→</span>
+        <span class="step">Retain / Cross-sell / Upsell</span><span class="arrow">→</span><span class="step">Business Outcome</span>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"Notice — no mention of algorithms yet. This is a business flow, not a data science flow."</div>
+      <div class="fline"><span class="flabel">ASK</span>"Which step in this flow does your current role sit closest to?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>AI changes what happens between "customer data" and "action" — not the business goal itself.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's meet an actual customer and build her profile live."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 2 : SEGMENTATION EXPLORER ================= -->
+  <section class="screen" data-id="explorer">
+    <div class="eyebrow">Live build · 12 live interaction points start here</div>
+    <h1>Build a customer. Watch the segment change.</h1>
+    <p class="lede">Adjust any dial below. Everything downstream — segment, churn risk, reasons, value, recommended action — recalculates instantly.</p>
+
+    <div class="btn-row">
+      <button class="btn primary" onclick="loadPreset('priya_loyal')">Load Priya (loyal, 6 yrs)</button>
+      <button class="btn" onclick="loadPreset('priya_drift')">Now let Priya's engagement drop + a complaint arrives</button>
+      <button class="btn ghost" onclick="loadPreset('reset')">Reset to defaults</button>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Customer profile controls</h3>
+        <div class="field"><label>Insurance type</label>
+          <select id="c_type" onchange="onControlChange()">
+            <option>Motor</option><option>Health</option><option>Life</option><option>Property</option><option>Commercial</option>
+          </select>
+        </div>
+        <div class="field"><label>Policy tenure <span id="lbl_tenure"></span></label>
+          <input type="range" id="c_tenure" min="0" max="15" value="6" oninput="onControlChange()"></div>
+        <div class="field"><label>Number of policies <span id="lbl_policies"></span></label>
+          <input type="range" id="c_policies" min="1" max="5" value="2" oninput="onControlChange()"></div>
+        <div class="field"><label>Annual premium (₹) <span id="lbl_premium"></span></label>
+          <input type="range" id="c_premium" min="5000" max="100000" step="1000" value="32000" oninput="onControlChange()"></div>
+        <div class="field"><label>Claim count (last 3 yrs) <span id="lbl_claims"></span></label>
+          <input type="range" id="c_claims" min="0" max="5" value="0" oninput="onControlChange()"></div>
+        <div class="field"><label>Payment behaviour</label>
+          <select id="c_payment" onchange="onControlChange()"><option>Good</option><option>Average</option><option>Poor</option></select></div>
+        <div class="field"><label>Renewal proximity (days) <span id="lbl_renewal"></span></label>
+          <input type="range" id="c_renewal" min="1" max="180" value="90" oninput="onControlChange()"></div>
+      </div>
+      <div class="card">
+        <h3>Behaviour &amp; experience controls</h3>
+        <div class="field"><label>Customer engagement</label>
+          <select id="c_engagement" onchange="onControlChange()"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="field"><label>Digital engagement</label>
+          <select id="c_digital" onchange="onControlChange()"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="field"><label>Customer satisfaction</label>
+          <select id="c_satisfaction" onchange="onControlChange()"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="field"><label>Service interactions (90 days) <span id="lbl_service"></span></label>
+          <input type="range" id="c_service" min="0" max="10" value="1" oninput="onControlChange()"></div>
+        <div class="field"><label>Complaint count (open) <span id="lbl_complaint"></span></label>
+          <input type="range" id="c_complaint" min="0" max="3" value="0" oninput="onControlChange()"></div>
+        <div class="field"><label>Days since last interaction <span id="lbl_lastint"></span></label>
+          <input type="range" id="c_lastint" min="0" max="365" value="20" oninput="onControlChange()"></div>
+        <div class="checkline"><input type="checkbox" id="c_pricesensitive" onchange="onControlChange()"> Frequently compares prices / products</div>
+        <div class="checkline"><input type="checkbox" id="c_competitor" onchange="onControlChange()"> Recent competitor comparison activity detected</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--gold);">
+      <div class="row" style="justify-content:space-between;">
+        <h3 style="margin:0;">Live result</h3>
+        <span class="tag" id="liveSegmentTag">—</span>
+      </div>
+      <p class="muted" id="liveSegmentLine" style="margin-top:6px;"></p>
+      <div class="gauge-wrap" style="margin-top:10px;">
+        <div class="gauge" id="liveGauge"><div class="hole"><span class="num" id="liveChurnNum">—</span><span class="lab">CHURN RISK</span></div></div>
+        <div>
+          <p style="margin-bottom:4px;"><strong>Customer value:</strong> <span id="liveValueTag"></span></p>
+          <p style="margin-bottom:4px;"><strong>Recommended next best action:</strong></p>
+          <p class="muted" id="liveNBA" style="max-width:420px;"></p>
+        </div>
+      </div>
+    </div>
+
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"This is Priya — 6 years with us, two policies, good payment history, high engagement, no complaints."</div>
+      <div class="fline"><span class="flabel">CLICK</span>Load Priya preset → point out the green "Loyal &amp; Valuable" tag and low churn number.</div>
+      <div class="fline"><span class="flabel">CLICK</span>Click the drift preset → engagement drops, a complaint appears.</div>
+      <div class="fline"><span class="flabel">ASK</span>"What just happened to Priya's segment and churn score?"</div>
+      <div class="fline"><span class="flabel">EXPECT</span>Segment moves toward Service Recovery / At Risk; churn score rises.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Segmentation is not permanent. Customers move between segments as behaviour changes — which is exactly why this needs to run continuously, not once a year.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's look at all six segments this engine recognizes."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 3 : SEGMENT GALLERY ================= -->
+  <section class="screen" data-id="gallery">
+    <div class="eyebrow">The six segments</div>
+    <h1>Business-friendly groups, not cluster numbers</h1>
+    <p class="lede">No insurer runs a campaign against "Cluster 4." These are the same six groups your engine just moved Priya between.</p>
+    <div class="grid3" id="segmentGallery"></div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Walk each card in order, ending deliberately on Service Recovery.</div>
+      <div class="fline"><span class="flabel">ASK</span>"Which of these six do you think is most common in your own book of business?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Every segment has both a characteristic pattern and a distinct next action — segmentation without action is just a report.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Segments tell us who the customer is. Now — can AI tell us who's about to leave?"</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 4 : CHURN PREDICTION ================= -->
+  <section class="screen" data-id="churn">
+    <div class="eyebrow">From WHO to WHAT</div>
+    <h1>Which customers are likely to leave?</h1>
+    <p class="lede">Pick any customer from the portfolio and see their retention score — expressed as a risk, never a certainty.</p>
+    <div class="field" style="max-width:360px;"><label>Select customer</label>
+      <select id="rosterSelect" onchange="renderChurnScreen()"></select>
+    </div>
+    <div class="card" style="border-color:var(--gold);">
+      <div class="gauge-wrap">
+        <div class="gauge" id="churnGauge"><div class="hole"><span class="num" id="churnGaugeNum">—</span><span class="lab">CHURN RISK</span></div></div>
+        <div>
+          <h3 id="churnCustName" style="margin-bottom:4px;"></h3>
+          <p class="muted" id="churnCustLine" style="margin-bottom:8px;"></p>
+          <span class="tag" id="churnCustSegTag"></span>
+        </div>
+      </div>
+      <p class="small-note" style="margin-top:14px;">A churn score is a <strong>risk</strong>, not a prediction of certainty — it says "this customer looks more like past customers who left" not "this customer will leave."</p>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Select Ravi, then Priya, back to back, to contrast a high- and low-risk customer.</div>
+      <div class="fline"><span class="flabel">ASK</span>"Is 69% churn risk the same as 'Ravi is 69% likely to leave'?"</div>
+      <div class="fline"><span class="flabel">EXPECT</span>No — it's a relative risk ranking, not a guaranteed outcome.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Never present a churn score as certainty. It's a prioritization tool, not a verdict.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"A score alone isn't useful to a relationship manager. They need to know why."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 5 : WHY / REASONS ================= -->
+  <section class="screen" data-id="reasons">
+    <div class="eyebrow">From WHAT to WHY</div>
+    <h1>Why might this customer leave?</h1>
+    <p class="lede">Same customer as before. This time we open up the score into plain-language signals — this is what "explainable AI" means in practice.</p>
+    <div class="field" style="max-width:360px;"><label>Select customer</label>
+      <select id="rosterSelect2" onchange="renderReasonsScreen()"></select>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h3 style="margin:0;" id="reasonCustName"></h3>
+        <span class="pill" id="reasonChurnPill"></span>
+      </div>
+      <p class="muted" style="margin:6px 0 14px 0;">Top factors the engine weighed:</p>
+      <div id="reasonList"></div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"AI doesn't just say 'this customer may leave.' It should always be able to say why."</div>
+      <div class="fline"><span class="flabel">ASK</span>"If you were the relationship manager, which one of these reasons would you act on first?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Explainability turns a score into something a frontline team can actually act on and trust.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's change one signal at a time and watch the risk move."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 6 : WHAT-IF ================= -->
+  <section class="screen" data-id="whatif">
+    <div class="eyebrow">Cause and effect</div>
+    <h1>"What if?" experiments</h1>
+    <p class="lede">Starting from Ravi's profile, run five quick experiments and watch the churn score respond in real time.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="field"><label>Renewal proximity <span id="wi_renewal_lbl"></span></label>
+          <input type="range" id="wi_renewal" min="1" max="90" value="60" oninput="renderWhatIf()"></div>
+        <div class="checkline"><input type="checkbox" id="wi_complaint" onchange="renderWhatIf()"> Customer files a complaint</div>
+        <div class="field"><label>Engagement</label>
+          <select id="wi_engagement" onchange="renderWhatIf()"><option>High</option><option>Low</option></select></div>
+        <div class="field"><label>Customer satisfaction</label>
+          <select id="wi_satisfaction" onchange="renderWhatIf()"><option>High</option><option>Low</option></select></div>
+        <div class="checkline"><input type="checkbox" id="wi_intervention" onchange="renderWhatIf()"> Proactive service intervention applied</div>
+      </div>
+      <div class="card" style="border-color:var(--gold);">
+        <div class="gauge-wrap">
+          <div class="gauge" id="wiGauge"><div class="hole"><span class="num" id="wiGaugeNum">—</span><span class="lab">CHURN RISK</span></div></div>
+          <div><p class="muted" id="wiLine"></p></div>
+        </div>
+        <div id="wiIllustrative" style="display:none;"><span class="illustrative">Illustrative scenario</span>
+        <p class="small-note">This is a simplified, directional illustration for training purposes — not a claim that any specific intervention guarantees a specific reduction in real churn.</p></div>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"Watch what happens as renewal gets closer." Drag the slider live.</div>
+      <div class="fline"><span class="flabel">CLICK</span>Toggle the complaint checkbox, then satisfaction, then intervention.</div>
+      <div class="fline"><span class="flabel">ASK</span>"Which single factor moved the score the most?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Risk is not fixed. It responds to real, current behaviour — which means it can also be influenced by real, current action.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"So — once we know the risk and the reason, what should we actually do?"</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 7 : NBA ENGINE ================= -->
+  <section class="screen" data-id="nba">
+    <div class="eyebrow">The centerpiece</div>
+    <h1>The Next Best Action engine</h1>
+    <p class="lede">Segment + churn risk + customer need → one clear recommendation. Right customer, right moment, right action, right channel.</p>
+    <div class="grid2" id="nbaCards"></div>
+    <div class="card">
+      <div class="field" style="max-width:360px;"><label>Try any other customer</label>
+        <select id="nbaSelect" onchange="renderNBAFree()"></select></div>
+      <div id="nbaFreeResult"></div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Walk the four preset cards — Ravi, Meena, Arun, Kavya — each a different segment, each a different action.</div>
+      <div class="fline"><span class="flabel">ASK</span>Pick a name from the dropdown together as a group and predict the action before revealing it.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>"Next Best Action" is where segmentation and churn prediction actually pay off — it's the only output a frontline team needs to see.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Not every action is retention. Some customers are ready to buy more."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 8 : CROSS-SELL / UPSELL ================= -->
+  <section class="screen" data-id="crosssell">
+    <div class="eyebrow">Growth, responsibly</div>
+    <h1>Cross-sell and upsell — the difference, live</h1>
+    <p class="lede"><strong>Cross-sell</strong> = a different relevant product. <strong>Upsell</strong> = more value within the product they already have.</p>
+    <div class="grid2">
+      <div class="card">
+        <span class="tag seg-growth">CROSS-SELL EXAMPLE</span>
+        <h3 style="margin-top:10px;">Customer with 5-year motor policy</h3>
+        <p class="muted">Good payment history · High engagement · Stable relationship · No major complaints</p>
+        <p><strong>AI-identified opportunity:</strong> Health insurance</p>
+        <p class="small-note"><strong>Reason:</strong> customer profile and existing relationship indicate potential suitability — not a guarantee of fit.</p>
+        <p><strong>Suggested action:</strong> Offer a personalized health-insurance conversation.</p>
+        <p class="small-note">AI identifies the opportunity. The customer must still be offered any product based on suitability and consent.</p>
+      </div>
+      <div class="card">
+        <span class="tag seg-loyal">UPSELL EXAMPLE</span>
+        <h3 style="margin-top:10px;">Customer with basic motor coverage</h3>
+        <p class="muted">High vehicle usage · High-value vehicle · Strong engagement · Coverage gap identified</p>
+        <p><strong>AI-identified opportunity:</strong> Enhanced coverage / relevant add-ons</p>
+        <p><strong>Suggested action:</strong> Explore whether enhanced coverage is appropriate for this vehicle profile.</p>
+        <p class="small-note">Same product family, more appropriate value — this is upsell, not cross-sell.</p>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Read both cards side by side and ask the room to name which is which before you label them.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>AI surfaces a suitability-based opportunity; a human still applies judgment, consent, and regulatory suitability checks before any offer.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Now the most important screen in this whole demo."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 9 : DON'T ALWAYS SELL ================= -->
+  <section class="screen" data-id="dontsell">
+    <div class="eyebrow">The most important idea today</div>
+    <h1>Don't always sell</h1>
+    <div class="card">
+      <span class="tag seg-recovery">HIGH CHURN RISK · RECENT COMPLAINT · POOR CLAIMS EXPERIENCE</span>
+      <p style="margin-top:12px;">A customer has a recent complaint, a negative sentiment signal, and a poor claims experience. Renewal is approaching.</p>
+      <p style="font-weight:700;margin-bottom:10px;">What should the insurer do next?</p>
+      <div id="dontSellOptions"></div>
+      <div class="reveal-box" id="dontSellReveal">
+        <p><strong>❌ Do not cross-sell &nbsp; ❌ Do not upsell &nbsp; ✅ Service recovery first</strong></p>
+        <p style="margin-top:8px;">Customer-centric AI is not about maximizing sales on every interaction. Selling into an unresolved problem accelerates the very churn you're trying to prevent.</p>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Let the room genuinely vote before revealing — this works best when someone picks "promotional offer."</div>
+      <div class="fline"><span class="flabel">ASK</span>"Why does selling here usually make things worse, not better?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>The AI recommendation engine's job is to protect the relationship first — commercial opportunity is sequenced, never simultaneous, with unresolved service issues.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's put a number on why this customer is worth protecting in the first place."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 10 : CLV ================= -->
+  <section class="screen" data-id="clv">
+    <div class="eyebrow">Value, not just risk</div>
+    <h1>Not every customer has the same value to the business</h1>
+    <div class="grid2">
+      <div class="card">
+        <span class="tag seg-loyal">CUSTOMER A</span>
+        <p style="margin-top:8px;">Annual premium ₹20,000 · 8-year tenure · Multiple products · High engagement</p>
+        <p><strong>High potential lifetime value</strong></p>
+      </div>
+      <div class="card">
+        <span class="tag seg-recovery">CUSTOMER B</span>
+        <p style="margin-top:8px;">Annual premium ₹10,000 · 1-year tenure · Low engagement · High churn risk</p>
+        <p><strong>Lower relative lifetime value, currently at risk</strong></p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Value × risk determines priority</h3>
+      <table>
+        <tr><th>Customer</th><th>Value</th><th>Churn risk</th><th>Priority</th></tr>
+        <tr><td>A</td><td>High</td><td>High</td><td><span class="dot red"></span> Immediate retention priority</td></tr>
+        <tr><td>B</td><td>High</td><td>Low</td><td><span class="dot green"></span> Protect &amp; grow</td></tr>
+        <tr><td>C</td><td>Low</td><td>High</td><td><span class="dot amber"></span> Selective intervention</td></tr>
+        <tr><td>D</td><td>Low</td><td>Low</td><td><span class="dot green"></span> Standard engagement</td></tr>
+      </table>
+      <p class="small-note" style="margin-top:10px;">Retention strategy should weigh both customer value and likelihood of leaving — not risk alone.</p>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"High churn risk alone doesn't tell you where to spend your team's limited time."</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Value × risk, together, is what actually prioritizes a relationship manager's day.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's turn that table into a map you can click through."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 11 : 2x2 MATRIX ================= -->
+  <section class="screen" data-id="matrix">
+    <div class="eyebrow">The prioritization map</div>
+    <h1>Customer value × churn risk</h1>
+    <p class="lede">Every dot is a customer from our sample portfolio. Click any dot to see why it landed where it did.</p>
+    <div class="matrix" id="matrixGrid">
+      <div class="quad" style="background:rgba(226,87,76,0.14);" id="quad-hh"><h4 style="color:var(--red);">Immediate retention priority</h4><span class="sub">High value · High risk</span></div>
+      <div class="quad" style="background:rgba(63,174,122,0.14);" id="quad-hl"><h4 style="color:var(--green);">Protect &amp; grow</h4><span class="sub">High value · Low risk</span></div>
+      <div class="quad" style="background:rgba(224,166,58,0.14);" id="quad-lh"><h4 style="color:var(--amber);">Selective intervention</h4><span class="sub">Low value · High risk</span></div>
+      <div class="quad" style="background:rgba(91,143,224,0.14);" id="quad-ll"><h4 style="color:var(--blue);">Standard engagement</h4><span class="sub">Low value · Low risk</span></div>
+    </div>
+    <div class="card" id="matrixDetail" style="margin-top:14px;">
+      <p class="muted">Click a dot above to inspect a customer.</p>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"This single view is often the most useful thing a retention team adopts from all of this."</div>
+      <div class="fline"><span class="flabel">CLICK</span>Click 2–3 dots in the top-left (red) quadrant, then one in bottom-right (blue).</div>
+      <div class="fline"><span class="flabel">ASK</span>"If your team could only work one quadrant this week, which would it be?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>A 2×2 turns a spreadsheet of scores into a Monday-morning work list.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Risk isn't static — it moves through a customer's journey. Let's follow one customer over time."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 12 : CUSTOMER JOURNEY ================= -->
+  <section class="screen" data-id="journey">
+    <div class="eyebrow">Customer 360</div>
+    <h1>One customer, followed over time</h1>
+    <p class="lede">Move through the stages below and watch the same customer's risk shift with real events — not a one-time score.</p>
+    <div class="flow" style="margin-bottom:16px;">
+      <span class="step">Acquisition</span><span class="arrow">→</span><span class="step">Policy purchase</span><span class="arrow">→</span>
+      <span class="step">Engagement</span><span class="arrow">→</span><span class="step">Claim</span><span class="arrow">→</span>
+      <span class="step">Service interaction</span><span class="arrow">→</span><span class="step">Renewal</span><span class="arrow">→</span>
+      <span class="step">Cross-sell / upsell</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="setJourneyStage(0)">Before claim</button>
+      <button class="btn" onclick="setJourneyStage(1)">After poor claim experience</button>
+      <button class="btn" onclick="setJourneyStage(2)">After unresolved complaint</button>
+      <button class="btn primary" onclick="setJourneyStage(3)">After proactive intervention</button>
+    </div>
+    <div class="card" style="border-color:var(--gold);">
+      <div class="gauge-wrap">
+        <div class="gauge" id="journeyGauge"><div class="hole"><span class="num" id="journeyGaugeNum">—</span><span class="lab">CHURN RISK</span></div></div>
+        <div><p id="journeyLine" class="muted"></p></div>
+      </div>
+      <div id="journeyIllustrative" style="display:none;margin-top:10px;">
+        <span class="illustrative">Illustrative scenario</span>
+        <p class="small-note">The final stage shows a possible, not guaranteed, outcome — used here to teach the concept of continuous monitoring.</p>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Click through all four stages in order, pausing on each.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>AI monitoring is continuous, not a once-a-year segmentation exercise — risk is reassessed as new events happen.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Some of the richest signal isn't in structured data at all — it's in what the customer actually says."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 13 : SENTIMENT ================= -->
+  <section class="screen" data-id="sentiment">
+    <div class="eyebrow">Beyond structured data</div>
+    <h1>Listening to the customer directly</h1>
+    <p class="lede">A real service conversation, run through sentiment and intent analysis.</p>
+    <div class="bubble">"I have been a customer for seven years, but nobody is helping me with my claim. I am seriously thinking about moving to another company."</div>
+    <div class="btn-row"><button class="btn primary" onclick="document.getElementById('sentimentReveal').classList.add('show')">Run AI analysis</button></div>
+    <div class="reveal-box" id="sentimentReveal">
+      <div class="grid2">
+        <div>
+          <p><strong>Sentiment:</strong> Negative</p>
+          <p><strong>Intent:</strong> Escalation</p>
+          <p><strong>Topic:</strong> Claim / service issue</p>
+        </div>
+        <div>
+          <p><strong>Churn signal:</strong> High</p>
+          <p><strong>Recommended action:</strong> Immediate service recovery</p>
+        </div>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Read the quote aloud before clicking "Run AI analysis."</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Conversational AI feeds the exact same segmentation and NBA engine you've already seen — it's another data source, not a separate system.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's test your own intuition against the model on a few scenarios."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 14 : VOTING SCENARIOS ================= -->
+  <section class="screen" data-id="voting">
+    <div class="eyebrow">Prediction challenge</div>
+    <h1>What would you recommend?</h1>
+    <div id="votingScenarios"></div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Run all three scenarios; ask for a show of hands or chat vote before each reveal.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Notice how often the group's instinct and the engine agree — the value of AI here is consistency and scale, not a wildly different judgment.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"But should we ever blindly trust the model over a human who knows the account?"</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 15 : HUMAN VS AI ================= -->
+  <section class="screen" data-id="humanai">
+    <div class="eyebrow">Judgment still matters</div>
+    <h1>Should we blindly trust the AI prediction?</h1>
+    <div class="card">
+      <p><strong>The model says:</strong> Churn risk = 81% (High)</p>
+      <p>But the relationship manager knows this customer recently renewed through an offline branch visit — the digital behaviour data the model saw is three months out of date.</p>
+      <div class="btn-row">
+        <button class="btn" onclick="revealHumanAI()">Reveal the answer</button>
+      </div>
+      <div class="reveal-box" id="humanAIReveal">
+        <p><strong>No — not blindly.</strong></p>
+        <table style="margin-top:8px;">
+          <tr><th>AI provides</th><th>Humans provide</th></tr>
+          <tr><td>Scale</td><td>Context</td></tr>
+          <tr><td>Pattern recognition</td><td>Relationship knowledge</td></tr>
+          <tr><td>Early warning</td><td>Exceptions</td></tr>
+          <tr><td>Consistency</td><td>Judgement</td></tr>
+          <tr><td>Prioritization</td><td>Accountability</td></tr>
+        </table>
+        <p style="margin-top:10px;font-weight:700;">AI + customer expertise &gt; AI alone.</p>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">ASK</span>"Has anyone here already overridden a model or a rule using exactly this kind of context?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>The engine is a decision-support tool that gets better with a human in the loop — never a decision-replacement tool.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"That trust has to be earned responsibly — let's talk about what that means."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 16 : RESPONSIBLE AI ================= -->
+  <section class="screen" data-id="responsible">
+    <div class="eyebrow">Governance</div>
+    <h1>What if the model performs worse for one customer group?</h1>
+    <div class="card">
+      <p style="font-weight:700;margin-bottom:10px;">What should the insurer do?</p>
+      <div id="respOptions"></div>
+      <div class="reveal-box" id="respReveal">
+        <p>The strongest answer combines several of these: <strong>investigate the data, validate performance across groups, review for bias, and keep human oversight in place</strong> — "continue using it unchanged" is never the answer on its own.</p>
+        <p style="margin-top:10px;">Responsible AI in this context rests on: <strong>Accuracy · Fairness · Explainability · Privacy · Consent · Governance · Human oversight.</strong></p>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Responsible AI is a business control, similar in spirit to underwriting or claims governance — not a separate technical topic.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Everything you've seen so far used one insurance line. Watch it adapt across sectors."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 17 : SECTOR SCENARIOS ================= -->
+  <section class="screen" data-id="sectors">
+    <div class="eyebrow">One concept, every line of business</div>
+    <h1>The same engine, adapted by sector</h1>
+    <div class="field" style="max-width:360px;"><label>Select insurance domain</label>
+      <select id="sectorSelect" onchange="renderSectorScreen()">
+        <option>Motor</option><option>Health</option><option>Life</option><option>Property</option><option>Commercial</option><option>All sectors</option>
+      </select>
+    </div>
+    <div class="card">
+      <h3 id="sectorSignalsTitle"></h3>
+      <p class="muted" id="sectorSignalsLine"></p>
+    </div>
+    <h3 style="margin-top:20px;">Scenario library</h3>
+    <div id="scenarioLibrary"></div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"The mathematics don't need to change sector to sector — the signals that matter do."</div>
+      <div class="fline"><span class="flabel">ASK</span>Pick a participant from a sector not yet shown and ask what a "service recovery" moment looks like in their line.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>This is one platform capability, reusable across every insurance business unit in the room.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Zooming out from one customer to the whole portfolio."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 18 : EXECUTIVE DASHBOARD ================= -->
+  <section class="screen" data-id="dashboard">
+    <div class="eyebrow">Zooming out</div>
+    <h1>AI Customer Intelligence — portfolio view</h1>
+    <p class="lede">Aggregated from a live sample of <span id="dashSampleSize"></span> customers generated for this session (illustrative, not real customer data).</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>Customers by segment</h3>
+        <div id="dashSegmentBars"></div>
+      </div>
+      <div class="card">
+        <h3>Customers by retention risk</h3>
+        <div id="dashRiskBars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>High priority: high value + high churn risk</h3>
+      <table>
+        <thead><tr><th>Customer</th><th>Segment</th><th>Churn risk</th><th>Key reason</th><th>Recommended action</th></tr></thead>
+        <tbody id="dashPriorityTable"></tbody>
+      </table>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"This is the same engine you've been driving — just summed across the whole book."</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>A dashboard like this is what a head of retention or CX would actually look at each Monday.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's simulate designing a real campaign off this view."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 19 : CAMPAIGN SIMULATOR ================= -->
+  <section class="screen" data-id="campaign">
+    <div class="eyebrow">From insight to action</div>
+    <h1>Campaign simulator</h1>
+    <div class="grid2">
+      <div class="field"><label>Campaign type</label>
+        <select id="campType" onchange="renderCampaign()">
+          <option>Retention</option><option>Service Recovery</option><option>Cross-sell</option><option>Upsell</option><option>Re-engagement</option>
+        </select></div>
+      <div class="field"><label>Target segment</label>
+        <select id="campSegment" onchange="renderCampaign()">
+          <option>Loyal & Valuable</option><option>High-Value but At Risk</option><option>Price Sensitive</option>
+          <option>Growth Opportunity</option><option>Service Recovery</option><option>Low Engagement</option>
+        </select></div>
+    </div>
+    <div class="card" style="border-color:var(--gold);">
+      <div class="grid2">
+        <div><p class="stat-lab">Recommended audience</p><p class="stat-big" id="campAudience">—</p></div>
+        <div><p class="stat-lab">Recommended action</p><p id="campAction" style="font-weight:600;"></p></div>
+      </div>
+      <div class="grid2" style="margin-top:10px;">
+        <div><p class="stat-lab">Suggested channel</p><p id="campChannel"></p></div>
+        <div><p class="stat-lab">Business objective</p><p id="campObjective"></p></div>
+      </div>
+      <p class="small-note" style="margin-top:10px;">Audience size is drawn from this session's sample data; no financial ROI is claimed unless backed by an explicit calculation.</p>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Change campaign type and segment 2–3 times live.</div>
+      <div class="fline"><span class="flabel">ASK</span>"What would this look like as an actual weekly workflow for your team?"</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>This is the bridge from analysis to execution — segmentation and churn scoring only matter once they drive a real campaign.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Here's roughly what building this looks like with tools you can already access."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 20 : TOOL MAPPING ================= -->
+  <section class="screen" data-id="tools">
+    <div class="eyebrow">Behind the interface</div>
+    <h1>Tools your organization can realistically use</h1>
+    <p class="lede">No single vendor is required. This concept can be built on several stacks — pick what fits your organization's existing platforms.</p>
+    <div class="card">
+      <table>
+        <thead><tr><th>Capability</th><th>Possible tools</th></tr></thead>
+        <tbody>
+          <tr><td>Customer data</td><td>Excel / CSV / SQL</td></tr>
+          <tr><td>Customer dashboard</td><td>Power BI · Tableau</td></tr>
+          <tr><td>Segmentation</td><td>Dataiku · KNIME · Databricks · Python</td></tr>
+          <tr><td>Churn prediction</td><td>Azure ML · SageMaker · Vertex AI · H2O.ai · Dataiku</td></tr>
+          <tr><td>Customer conversations</td><td>Enterprise LLM (e.g. Azure OpenAI or equivalent)</td></tr>
+          <tr><td>Sentiment / intent</td><td>Enterprise AI / LLM platform</td></tr>
+          <tr><td>Interactive demo / app</td><td>Streamlit · Power BI</td></tr>
+          <tr><td>Deployment</td><td>Enterprise cloud / ML platform</td></tr>
+        </tbody>
+      </table>
+      <p class="small-note" style="margin-top:10px;">For a non-technical audience, low-code platforms like Dataiku, KNIME, and Power BI are usually the fastest path to a first working version.</p>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>"None of this requires your team to write machine learning code from scratch."</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>The barrier to starting is lower than most non-technical audiences assume.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's bring everything together in one final, harder case."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 21 : FINAL CHALLENGE ================= -->
+  <section class="screen" data-id="finalchallenge">
+    <div class="eyebrow">Bringing it all together</div>
+    <h1>Final case: Anitha</h1>
+    <div class="card">
+      <p>7 years with the insurer · 3 active policies · High customer value · Renewal in 15 days · Recent claim issue · Negative sentiment · Low recent engagement · Competitor comparison activity detected.</p>
+      <div class="grid3" style="margin:14px 0;">
+        <div><p class="stat-lab">Customer value</p><p class="stat-big" style="color:var(--gold);font-size:22px;">High</p></div>
+        <div><p class="stat-lab">Churn risk</p><p class="stat-big" style="color:var(--red);font-size:22px;">High</p></div>
+        <div><p class="stat-lab">Segment</p><p class="stat-big" style="color:var(--orange);font-size:22px;">At Risk</p></div>
+      </div>
+      <p style="font-weight:700;">What should the insurer do next? Take 60 seconds.</p>
+      <div class="btn-row"><button class="btn primary" onclick="document.getElementById('anithaReveal').classList.add('show')">Reveal next best action</button></div>
+      <div class="reveal-box" id="anithaReveal">
+        <div class="flow">
+          <span class="step">1. Resolve claim / service issue</span><span class="arrow">→</span>
+          <span class="step">2. Relationship-manager intervention</span><span class="arrow">→</span>
+          <span class="step">3. Rebuild trust</span><span class="arrow">→</span>
+          <span class="step">4. Discuss renewal</span><span class="arrow">→</span>
+          <span class="step">5. Only then, relevant cross-sell / upsell</span>
+        </div>
+      </div>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Give the room genuine silent time before revealing — don't rush this one.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Every idea from the session — segment, risk, reason, sequencing, don't-always-sell — shows up in this one case.</div>
+      <div class="fline"><span class="flabel">TRANSITION</span>"Let's close with the framework that ties this together."</div>
+    </details>
+  </section>
+
+  <!-- ================= SCREEN 22 : TAKEAWAY ================= -->
+  <section class="screen" data-id="takeaway">
+    <div class="eyebrow">Closing</div>
+    <h1>Customer retention isn't about stopping customers from leaving.</h1>
+    <p class="lede">It's about understanding customers early enough to create a better reason for them to stay.</p>
+    <div class="card">
+      <div class="flow" style="font-size:16px;">
+        <span class="step">WHO</span><span class="arrow">→</span><span class="step">WHAT</span><span class="arrow">→</span><span class="step">WHY</span><span class="arrow">→</span><span class="step">WHAT NEXT</span>
+      </div>
+      <p style="margin-top:12px;">Segmentation tells us <strong>who</strong> the customer is. Predictive AI tells us <strong>what</strong> they may do. Explainable AI helps us understand <strong>why</strong>. Next Best Action tells us <strong>what to do</strong>. Customer experience decides whether they stay.</p>
+    </div>
+    <div class="card soft">
+      <h3>Connect this to your job</h3>
+      <p class="muted">Type into chat: one customer decision in your current role that could benefit from this kind of AI.</p>
+    </div>
+    <div class="card" style="border-color:var(--gold);">
+      <p style="font-family:'Fraunces',serif;font-size:19px;">"The real power of AI is not knowing more about your customers. It is knowing what to do differently for each customer."</p>
+    </div>
+    <details class="facilitator">
+      <summary>Facilitator notes</summary>
+      <div class="fline"><span class="flabel">SAY</span>Read the closing line slowly. Let it be the last thing said before Q&A.</div>
+      <div class="fline"><span class="flabel">ASK</span>Invite 3–5 chat responses on "connect this to your job" before formally closing.</div>
+      <div class="fline"><span class="flabel">TAKEAWAY</span>Every participant should leave able to name one real use case from their own organization.</div>
+    </details>
+  </section>
+
+</div>
+
+<footer class="nav">
+  <div class="nav-inner">
+    <button class="btn" id="prevBtn" onclick="go(-1)">← Prev</button>
+    <div class="nav-title"><strong id="navTitleCurrent"></strong><br><span id="navTitleSub"></span></div>
+    <button class="btn primary" id="nextBtn" onclick="go(1)">Next →</button>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   SCREEN NAVIGATION
+============================================================ */
+const screens = [
+  {id:'intro', title:'1. Opening question'},
+  {id:'approach', title:'2. Traditional vs AI approach'},
+  {id:'explorer', title:'3. Segmentation explorer (live)'},
+  {id:'gallery', title:'4. The six segments'},
+  {id:'churn', title:'5. Churn / retention prediction'},
+  {id:'reasons', title:'6. Why might they leave'},
+  {id:'whatif', title:'7. What-if experiments'},
+  {id:'nba', title:'8. Next Best Action engine'},
+  {id:'crosssell', title:'9. Cross-sell & upsell'},
+  {id:'dontsell', title:'10. Don\'t always sell'},
+  {id:'clv', title:'11. Customer lifetime value'},
+  {id:'matrix', title:'12. Value × risk matrix'},
+  {id:'journey', title:'13. Customer journey'},
+  {id:'sentiment', title:'14. Customer sentiment'},
+  {id:'voting', title:'15. Audience prediction challenge'},
+  {id:'humanai', title:'16. Human vs AI'},
+  {id:'responsible', title:'17. Responsible AI'},
+  {id:'sectors', title:'18. Sector adaptation & scenario library'},
+  {id:'dashboard', title:'19. Executive dashboard'},
+  {id:'campaign', title:'20. Campaign simulator'},
+  {id:'tools', title:'21. Tool mapping'},
+  {id:'finalchallenge', title:'22. Final case: Anitha'},
+  {id:'takeaway', title:'23. Final takeaway'},
+];
+let current = 0;
+
+function buildJump(){
+  const sel = document.getElementById('jumpSelect');
+  sel.innerHTML = screens.map((s,i)=>`<option value="${i}">${s.title}</option>`).join('');
+  sel.onchange = ()=>{ current = parseInt(sel.value); render(); };
+}
+
+function render(){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  const s = screens[current];
+  document.querySelector(`.screen[data-id="${s.id}"]`).classList.add('active');
+  document.getElementById('jumpSelect').value = current;
+  document.getElementById('progressFill').style.width = ((current+1)/screens.length*100)+'%';
+  document.getElementById('prevBtn').disabled = current===0;
+  document.getElementById('nextBtn').textContent = current===screens.length-1 ? 'Restart ↺' : 'Next →';
+  document.getElementById('navTitleCurrent').textContent = s.title;
+  document.getElementById('navTitleSub').textContent = `Screen ${current+1} of ${screens.length}`;
+  window.scrollTo({top:0,behavior:'instant'});
+  onScreenShown(s.id);
+}
+function go(dir){
+  if(current===screens.length-1 && dir===1){ current=0; render(); return; }
+  current = Math.min(screens.length-1, Math.max(0, current+dir));
+  render();
+}
+
+/* ============================================================
+   CUSTOMER ENGINE
+============================================================ */
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function rand(min,max){return Math.random()*(max-min)+min;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function computeValue(c){
+  const premiumN = clamp(c.premium/100000,0,1);
+  const tenureN = clamp(c.tenure/15,0,1);
+  const policiesN = clamp(c.policies/5,0,1);
+  const score = premiumN*0.45 + tenureN*0.30 + policiesN*0.25;
+  let tier = score>0.55 ? 'High' : score>0.30 ? 'Medium' : 'Low';
+  return {score, tier};
+}
+
+function computeChurn(c){
+  let s = 18;
+  if(c.renewal<=15) s+=22; else if(c.renewal<=30) s+=13; else if(c.renewal<=60) s+=5;
+  if(c.engagement==='Low') s+=20; else if(c.engagement==='Medium') s+=8;
+  if(c.complaint>=1) s+=20*Math.min(c.complaint,2);
+  if(c.satisfaction==='Low') s+=15; else if(c.satisfaction==='Medium') s+=5;
+  if(c.payment==='Poor') s+=10; else if(c.payment==='Average') s+=3;
+  if(c.digital==='Low') s+=5;
+  if(c.lastInteraction>90) s+=6;
+  if(c.competitor) s+=10;
+  if(c.priceSensitive) s+=6;
+  if(c.sentiment==='Negative') s+=10; else if(c.sentiment==='Positive') s-=4;
+  if(c.tenure>=5) s-=10;
+  if(c.policies>=3) s-=8;
+  if(c.payment==='Good') s-=4;
+  return clamp(Math.round(s),2,97);
+}
+
+function computeSegment(c, churn, valueTier){
+  if(c.complaint>=1 || c.satisfaction==='Low' || c.sentiment==='Negative') return 'Service Recovery';
+  if(valueTier==='High' && churn>=50) return 'High-Value but At Risk';
+  if(c.priceSensitive) return 'Price Sensitive';
+  if(c.engagement==='Low' && c.digital==='Low' && c.lastInteraction>90) return 'Low Engagement';
+  if(c.policies===1 && c.engagement!=='Low' && churn<50) return 'Growth Opportunity';
+  if(c.tenure>=4 && c.policies>=2 && c.engagement==='High' && c.complaint===0) return 'Loyal & Valuable';
+  return c.policies<=1 ? 'Growth Opportunity' : 'Loyal & Valuable';
+}
+
+const SEGMENT_META = {
+  'Loyal & Valuable': {cls:'seg-loyal', color:'var(--green)', interp:'Protect this relationship.'},
+  'High-Value but At Risk': {cls:'seg-atrisk', color:'var(--orange)', interp:'High-value customer with elevated retention risk.'},
+  'Price Sensitive': {cls:'seg-price', color:'var(--mustard)', interp:'Price may strongly influence retention.'},
+  'Growth Opportunity': {cls:'seg-growth', color:'var(--blue)', interp:'Potential cross-sell customer.'},
+  'Service Recovery': {cls:'seg-recovery', color:'var(--red)', interp:'Do not sell. Fix the relationship first.'},
+  'Low Engagement': {cls:'seg-low', color:'var(--grey-blue)', interp:'Customer relationship is becoming inactive.'},
+};
+
+function computeNBA(segment){
+  switch(segment){
+    case 'Service Recovery': return 'Resolve the outstanding service issue before presenting any new product.';
+    case 'High-Value but At Risk': return 'Proactive relationship-manager outreach before renewal.';
+    case 'Price Sensitive': return 'Communicate value and suitable options rather than generic promotional messaging.';
+    case 'Growth Opportunity': return 'Explore a relevant complementary insurance product, based on suitability.';
+    case 'Loyal & Valuable': return 'Continue personalized service; consider a relevant, suitable cross-sell.';
+    case 'Low Engagement': return 'Launch a re-engagement touchpoint before any commercial ask.';
+    default: return 'Monitor and re-assess at next interaction.';
+  }
+}
+
+function computeReasons(c, churn){
+  const reasons = [];
+  if(c.renewal<=15) reasons.push({t:'red', text:`Renewal approaching in ${c.renewal} days`});
+  else if(c.renewal<=30) reasons.push({t:'amber', text:`Renewal in ${c.renewal} days`});
+  if(c.engagement==='Low') reasons.push({t:'red', text:'Declining engagement'});
+  else if(c.engagement==='Medium') reasons.push({t:'amber', text:'Moderate engagement'});
+  if(c.complaint>=1) reasons.push({t:'red', text:'Recent, unresolved service complaint'});
+  if(c.satisfaction==='Low') reasons.push({t:'red', text:'Low recent customer satisfaction'});
+  if(c.priceSensitive) reasons.push({t:'amber', text:'Price-sensitivity signals detected'});
+  if(c.competitor) reasons.push({t:'amber', text:'Competitor comparison activity detected'});
+  if(c.sentiment==='Negative') reasons.push({t:'red', text:'Negative sentiment in recent interactions'});
+  if(c.lastInteraction>120) reasons.push({t:'amber', text:'Long gap since last interaction'});
+  if(c.tenure>=5) reasons.push({t:'green', text:'Long policy tenure — positive factor'});
+  if(c.policies>=2) reasons.push({t:'green', text:'Multiple policies — positive factor'});
+  if(c.payment==='Good') reasons.push({t:'green', text:'Consistent payment history — positive factor'});
+  const order = {red:0, amber:1, green:2};
+  reasons.sort((a,b)=>order[a.t]-order[b.t]);
+  return reasons.slice(0,6);
+}
+
+function riskCat(churn){
+  if(churn>=55) return {label:'High', color:'var(--red)'};
+  if(churn>=30) return {label:'Medium', color:'var(--amber)'};
+  return {label:'Low', color:'var(--green)'};
+}
+
+function gaugeStyle(el,churn,color){
+  el.style.background = `conic-gradient(${color} ${churn*3.6}deg, var(--panel-2) 0deg)`;
+}
+
+/* ============================================================
+   SYNTHETIC ROSTER
+============================================================ */
+const NAMES = ['Priya','Ravi','Meena','Arun','Kavya','Anitha','Deepak','Sneha','Vikram','Latha','Rahul','Anjali','Suresh','Divya','Manoj','Pooja','Karthik','Nisha','Ajay','Rekha','Sanjay','Farha','Naveen','Swati','Ramesh','Geeta','Tarun','Meghna','Ashok','Bhavna','Girish','Hema','Imran','Jyoti','Kiran','Lalita','Mahesh','Nitin','Om','Padma'];
+let ROSTER = [];
+
+function makeCustomer(name, type, overrides={}){
+  const base = {
+    id:name, name, type,
+    tenure: pick([1,2,3,4,5,6,7,8,9,10]),
+    policies: pick([1,1,2,2,2,3,4]),
+    premium: pick([8000,12000,18000,25000,32000,45000,60000,80000]),
+    claims: pick([0,0,0,1,1,2]),
+    payment: pick(['Good','Good','Good','Average','Poor']),
+    engagement: pick(['High','High','Medium','Medium','Low']),
+    digital: pick(['High','Medium','Medium','Low']),
+    satisfaction: pick(['High','High','Medium','Low']),
+    service: pick([0,1,2,3,4]),
+    complaint: pick([0,0,0,0,1]),
+    lastInteraction: pick([5,15,30,45,60,90,120,180]),
+    renewal: pick([10,20,30,45,60,90,120]),
+    priceSensitive: Math.random()<0.22,
+    competitor: Math.random()<0.15,
+    sentiment: pick(['Positive','Neutral','Neutral','Negative']),
+  };
+  return Object.assign(base, overrides);
+}
+
+function enrich(c){
+  const {tier} = computeValue(c);
+  const churn = computeChurn(c);
+  const segment = computeSegment(c, churn, tier);
+  return Object.assign({}, c, {valueTier:tier, churn, segment});
+}
+
+function buildRoster(){
+  ROSTER = [];
+  ROSTER.push(makeCustomer('Priya','Motor',{tenure:6,policies:2,premium:28000,claims:0,payment:'Good',engagement:'High',digital:'High',satisfaction:'High',service:0,complaint:0,lastInteraction:10,renewal:75,priceSensitive:false,competitor:false,sentiment:'Positive'}));
+  ROSTER.push(makeCustomer('Ravi','Health',{tenure:3,policies:1,premium:35000,claims:1,payment:'Average',engagement:'Low',digital:'Medium',satisfaction:'Medium',service:2,complaint:0,lastInteraction:80,renewal:8,priceSensitive:false,competitor:true,sentiment:'Neutral'}));
+  ROSTER.push(makeCustomer('Meena','Health',{tenure:4,policies:2,premium:22000,claims:2,payment:'Average',engagement:'Medium',digital:'Medium',satisfaction:'Low',service:4,complaint:1,lastInteraction:20,renewal:40,priceSensitive:false,competitor:false,sentiment:'Negative'}));
+  ROSTER.push(makeCustomer('Arun','Life',{tenure:2,policies:1,premium:15000,claims:0,payment:'Good',engagement:'High',digital:'High',satisfaction:'High',service:0,complaint:0,lastInteraction:12,renewal:100,priceSensitive:false,competitor:false,sentiment:'Positive'}));
+  ROSTER.push(makeCustomer('Kavya','Motor',{tenure:3,policies:1,premium:18000,claims:0,payment:'Average',engagement:'Medium',digital:'Medium',satisfaction:'Medium',service:1,complaint:0,lastInteraction:35,renewal:50,priceSensitive:true,competitor:true,sentiment:'Neutral'}));
+  ROSTER.push(makeCustomer('Anitha','Commercial',{tenure:7,policies:3,premium:70000,claims:1,payment:'Good',engagement:'Low',digital:'Medium',satisfaction:'Low',service:3,complaint:1,lastInteraction:60,renewal:15,priceSensitive:false,competitor:true,sentiment:'Negative'}));
+  for(let i=0;i<38;i++){
+    ROSTER.push(makeCustomer(NAMES[(i+6)%NAMES.length]+'-'+(100+i), pick(['Motor','Health','Life','Property','Commercial'])));
+  }
+  ROSTER = ROSTER.map(enrich);
+}
+function findRoster(name){ return ROSTER.find(c=>c.id===name || c.name===name); }
+
+/* ============================================================
+   SCREEN 0: INTRO POLL
+============================================================ */
+function buildIntroPoll(){
+  const opts = ['Yes, treat everyone the same','No, every customer needs a unique approach','Depends on customer type','Depends on the product'];
+  const wrap = document.getElementById('introOptions');
+  wrap.innerHTML = opts.map((o,i)=>`<button class="opt-btn" onclick="pickIntro(this)">${o}</button>`).join('');
+}
+function pickIntro(btn){
+  document.querySelectorAll('#introOptions .opt-btn').forEach(b=>b.classList.remove('picked'));
+  btn.classList.add('picked');
+  document.getElementById('introReveal').classList.add('show');
+}
+
+/* ============================================================
+   SCREEN 2: EXPLORER
+============================================================ */
+function readExplorer(){
+  return {
+    tenure: +document.getElementById('c_tenure').value,
+    policies: +document.getElementById('c_policies').value,
+    premium: +document.getElementById('c_premium').value,
+    claims: +document.getElementById('c_claims').value,
+    payment: document.getElementById('c_payment').value,
+    renewal: +document.getElementById('c_renewal').value,
+    engagement: document.getElementById('c_engagement').value,
+    digital: document.getElementById('c_digital').value,
+    satisfaction: document.getElementById('c_satisfaction').value,
+    service: +document.getElementById('c_service').value,
+    complaint: +document.getElementById('c_complaint').value,
+    lastInteraction: +document.getElementById('c_lastint').value,
+    priceSensitive: document.getElementById('c_pricesensitive').checked,
+    competitor: document.getElementById('c_competitor').checked,
+    sentiment: 'Neutral',
+    type: document.getElementById('c_type').value,
+  };
+}
+function setExplorer(vals){
+  document.getElementById('c_type').value = vals.type;
+  document.getElementById('c_tenure').value = vals.tenure;
+  document.getElementById('c_policies').value = vals.policies;
+  document.getElementById('c_premium').value = vals.premium;
+  document.getElementById('c_claims').value = vals.claims;
+  document.getElementById('c_payment').value = vals.payment;
+  document.getElementById('c_renewal').value = vals.renewal;
+  document.getElementById('c_engagement').value = vals.engagement;
+  document.getElementById('c_digital').value = vals.digital;
+  document.getElementById('c_satisfaction').value = vals.satisfaction;
+  document.getElementById('c_service').value = vals.service;
+  document.getElementById('c_complaint').value = vals.complaint;
+  document.getElementById('c_lastint').value = vals.lastInteraction;
+  document.getElementById('c_pricesensitive').checked = vals.priceSensitive;
+  document.getElementById('c_competitor').checked = vals.competitor;
+  onControlChange();
+}
+function loadPreset(name){
+  if(name==='priya_loyal'){
+    setExplorer({type:'Motor',tenure:6,policies:2,premium:28000,claims:0,payment:'Good',renewal:75,engagement:'High',digital:'High',satisfaction:'High',service:0,complaint:0,lastInteraction:10,priceSensitive:false,competitor:false});
+  } else if(name==='priya_drift'){
+    setExplorer({type:'Motor',tenure:6,policies:2,premium:28000,claims:0,payment:'Good',renewal:75,engagement:'Low',digital:'Medium',satisfaction:'Low',service:2,complaint:1,lastInteraction:80,priceSensitive:false,competitor:false});
+  } else {
+    setExplorer({type:'Motor',tenure:6,policies:2,premium:32000,claims:0,payment:'Good',renewal:90,engagement:'High',digital:'High',satisfaction:'High',service:1,complaint:0,lastInteraction:20,priceSensitive:false,competitor:false});
+  }
+}
+function onControlChange(){
+  document.getElementById('lbl_tenure').textContent = document.getElementById('c_tenure').value+' yrs';
+  document.getElementById('lbl_policies').textContent = document.getElementById('c_policies').value;
+  document.getElementById('lbl_premium').textContent = '₹'+(+document.getElementById('c_premium').value).toLocaleString('en-IN');
+  document.getElementById('lbl_claims').textContent = document.getElementById('c_claims').value;
+  document.getElementById('lbl_renewal').textContent = document.getElementById('c_renewal').value+' days';
+  document.getElementById('lbl_service').textContent = document.getElementById('c_service').value;
+  document.getElementById('lbl_complaint').textContent = document.getElementById('c_complaint').value;
+  document.getElementById('lbl_lastint').textContent = document.getElementById('c_lastint').value+' days';
+
+  const c = readExplorer();
+  const {tier} = computeValue(c);
+  const churn = computeChurn(c);
+  const segment = computeSegment(c, churn, tier);
+  const meta = SEGMENT_META[segment];
+
+  const tag = document.getElementById('liveSegmentTag');
+  tag.textContent = segment; tag.className = 'tag '+meta.cls;
+  document.getElementById('liveSegmentLine').textContent = meta.interp;
+  document.getElementById('liveChurnNum').textContent = churn+'%';
+  gaugeStyle(document.getElementById('liveGauge'), churn, meta.color);
+  document.getElementById('liveValueTag').textContent = tier;
+  document.getElementById('liveNBA').textContent = computeNBA(segment);
+}
+
+/* ============================================================
+   SCREEN 3: GALLERY
+============================================================ */
+function buildGallery(){
+  const defs = [
+    ['Loyal & Valuable','Long tenure · Multiple policies · Good payment · Low complaints · High engagement','Loyalty engagement, personalized service, relevant cross-sell.'],
+    ['High-Value but At Risk','High premium · Multiple policies · Renewal approaching · Declining engagement · Recent service issue','Proactive retention intervention.'],
+    ['Price Sensitive','Frequently compares products · Price-driven · Renewal-sensitive · Limited product ownership','Value-based communication, appropriate offer.'],
+    ['Growth Opportunity','One major product · Good relationship · High engagement · Room for another product','Explore a relevant, suitable additional product.'],
+    ['Service Recovery','Recent complaint · Poor claims experience · Negative sentiment · Declining engagement','Fix the relationship — do not sell.'],
+    ['Low Engagement','Few interactions · Low digital activity · Minimal response · Long inactivity','Re-engagement campaign.'],
+  ];
+  const wrap = document.getElementById('segmentGallery');
+  wrap.innerHTML = defs.map(([name,chars,action])=>{
+    const meta = SEGMENT_META[name];
+    return `<div class="card"><span class="tag ${meta.cls}">${name}</span>
+      <p style="margin-top:10px;font-size:13px;">${chars}</p>
+      <p class="small-note" style="color:${meta.color};font-weight:700;">${meta.interp}</p>
+      <p class="small-note">Action: ${action}</p></div>`;
+  }).join('');
+}
+
+/* ============================================================
+   SCREEN 4/5: CHURN + REASONS
+============================================================ */
+function buildRosterSelects(){
+  ['rosterSelect','rosterSelect2','nbaSelect'].forEach(id=>{
+    const sel = document.getElementById(id);
+    sel.innerHTML = ROSTER.map(c=>`<option value="${c.id}">${c.name} — ${c.type} — ${c.segment}</option>`).join('');
+  });
+}
+function renderChurnScreen(){
+  const c = findRoster(document.getElementById('rosterSelect').value) || ROSTER[0];
+  const cat = riskCat(c.churn);
+  document.getElementById('churnGaugeNum').textContent = c.churn+'%';
+  gaugeStyle(document.getElementById('churnGauge'), c.churn, cat.color);
+  document.getElementById('churnCustName').textContent = c.name+' — '+c.type;
+  document.getElementById('churnCustLine').textContent = `${c.tenure} yrs tenure · ${c.policies} polic${c.policies>1?'ies':'y'} · ₹${c.premium.toLocaleString('en-IN')} premium · Risk category: ${cat.label}`;
+  const tag = document.getElementById('churnCustSegTag');
+  tag.textContent = c.segment; tag.className = 'tag '+SEGMENT_META[c.segment].cls;
+}
+function renderReasonsScreen(){
+  const c = findRoster(document.getElementById('rosterSelect2').value) || ROSTER[0];
+  document.getElementById('reasonCustName').textContent = c.name+' — '+c.type;
+  const cat = riskCat(c.churn);
+  const pill = document.getElementById('reasonChurnPill');
+  pill.textContent = `Churn risk ${c.churn}% (${cat.label})`;
+  pill.style.background = 'rgba(30,27,22,0.06)'; pill.style.color = cat.color;
+  const reasons = computeReasons(c, c.churn);
+  document.getElementById('reasonList').innerHTML = reasons.map(r=>
+    `<div class="reason-line"><span class="dot ${r.t}" style="margin-top:5px;"></span><span>${r.text}</span></div>`
+  ).join('') || '<p class="muted">No strong signals detected — this customer looks stable.</p>';
+}
+
+/* ============================================================
+   SCREEN 6: WHAT-IF
+============================================================ */
+function renderWhatIf(){
+  document.getElementById('wi_renewal_lbl').textContent = document.getElementById('wi_renewal').value+' days';
+  const base = findRoster('Ravi');
+  const c = Object.assign({}, base, {
+    renewal: +document.getElementById('wi_renewal').value,
+    complaint: document.getElementById('wi_complaint').checked ? 1 : 0,
+    engagement: document.getElementById('wi_engagement').value,
+    satisfaction: document.getElementById('wi_satisfaction').value,
+  });
+  let churn = computeChurn(c);
+  const intervention = document.getElementById('wi_intervention').checked;
+  if(intervention) churn = clamp(churn-18,2,97);
+  const cat = riskCat(churn);
+  document.getElementById('wiGaugeNum').textContent = churn+'%';
+  gaugeStyle(document.getElementById('wiGauge'), churn, cat.color);
+  document.getElementById('wiLine').textContent = `Ravi's churn risk under these conditions: ${cat.label} risk.`;
+  document.getElementById('wiIllustrative').style.display = intervention ? 'block':'none';
+}
+
+/* ============================================================
+   SCREEN 7: NBA
+============================================================ */
+function buildNBACards(){
+  const names = ['Ravi','Meena','Arun','Kavya'];
+  const wrap = document.getElementById('nbaCards');
+  wrap.innerHTML = names.map(n=>{
+    const c = findRoster(n);
+    const meta = SEGMENT_META[c.segment];
+    return `<div class="card"><span class="tag ${meta.cls}">${c.segment}</span>
+      <h3 style="margin-top:8px;">${c.name}</h3>
+      <p class="muted" style="font-size:13px;">Churn risk: ${c.churn}%</p>
+      <p style="margin-top:8px;"><strong>Recommended action:</strong><br>${computeNBA(c.segment)}</p></div>`;
+  }).join('');
+}
+function renderNBAFree(){
+  const c = findRoster(document.getElementById('nbaSelect').value);
+  const meta = SEGMENT_META[c.segment];
+  document.getElementById('nbaFreeResult').innerHTML = `<div class="card soft" style="margin-top:10px;">
+    <span class="tag ${meta.cls}">${c.segment}</span>
+    <p style="margin-top:8px;">${c.name} · Churn risk ${c.churn}%</p>
+    <p><strong>Recommended action:</strong> ${computeNBA(c.segment)}</p></div>`;
+}
+
+/* ============================================================
+   SCREEN 9: DON'T SELL POLL
+============================================================ */
+function buildDontSell(){
+  const opts = ['Send a promotional offer','Cross-sell health insurance',"Call and resolve the customer's issue",'Do nothing'];
+  document.getElementById('dontSellOptions').innerHTML = opts.map(o=>`<button class="opt-btn" onclick="pickDontSell(this)">${o}</button>`).join('');
+}
+function pickDontSell(btn){
+  document.querySelectorAll('#dontSellOptions .opt-btn').forEach(b=>b.classList.remove('picked'));
+  btn.classList.add('picked');
+  document.getElementById('dontSellReveal').classList.add('show');
+}
+
+/* ============================================================
+   SCREEN 11: MATRIX
+============================================================ */
+function buildMatrix(){
+  const sample = ROSTER.slice(0,44);
+  ['quad-hh','quad-hl','quad-lh','quad-ll'].forEach(id=>{
+    const q = document.getElementById(id);
+    q.querySelectorAll('.quad-dot').forEach(d=>d.remove());
+  });
+  sample.forEach(c=>{
+    const highValue = c.valueTier!=='Low';
+    const highRisk = c.churn>=50;
+    let quadId = highValue && highRisk ? 'quad-hh' : highValue && !highRisk ? 'quad-hl' : !highValue && highRisk ? 'quad-lh' : 'quad-ll';
+    const q = document.getElementById(quadId);
+    const dot = document.createElement('div');
+    dot.className='quad-dot';
+    dot.style.left = rand(10,85)+'%';
+    dot.style.top = rand(30,85)+'%';
+    dot.style.background = SEGMENT_META[c.segment].color;
+    dot.title = c.name;
+    dot.onclick = ()=>showMatrixDetail(c);
+    q.appendChild(dot);
+  });
+}
+function showMatrixDetail(c){
+  const meta = SEGMENT_META[c.segment];
+  document.getElementById('matrixDetail').innerHTML = `
+    <div class="row" style="justify-content:space-between;">
+      <h3 style="margin:0;">${c.name} — ${c.type}</h3>
+      <span class="tag ${meta.cls}">${c.segment}</span>
+    </div>
+    <p class="muted" style="margin-top:8px;">Value: <strong>${c.valueTier}</strong> · Churn risk: <strong>${c.churn}%</strong> · Tenure ${c.tenure} yrs · ${c.policies} polic${c.policies>1?'ies':'y'}</p>
+    <p style="margin-top:8px;"><strong>Recommended action:</strong> ${computeNBA(c.segment)}</p>`;
+}
+
+/* ============================================================
+   SCREEN 12: JOURNEY
+============================================================ */
+const journeyStages = [
+  {label:'Before claim — stable relationship', churn:14, illustrative:false},
+  {label:'After a poor claim experience — risk rising', churn:42, illustrative:false},
+  {label:'After the complaint goes unresolved — risk high', churn:74, illustrative:false},
+  {label:'After a proactive service intervention — risk potentially reduced', churn:38, illustrative:true},
+];
+function setJourneyStage(i){
+  const st = journeyStages[i];
+  const cat = riskCat(st.churn);
+  document.getElementById('journeyGaugeNum').textContent = st.churn+'%';
+  gaugeStyle(document.getElementById('journeyGauge'), st.churn, cat.color);
+  document.getElementById('journeyLine').textContent = st.label;
+  document.getElementById('journeyIllustrative').style.display = st.illustrative ? 'block':'none';
+}
+
+/* ============================================================
+   SCREEN 14: VOTING SCENARIOS
+============================================================ */
+const votingData = [
+  {
+    desc:'8 years tenure · High-value customer · Recent complaint · Renewal in 10 days · Low engagement',
+    options:['Cross-sell','Upsell','Offer a discount','Resolve the service issue','Do nothing'],
+    answer:'Service Recovery + Retention Intervention',
+    why:'A recent complaint and low engagement outweigh the commercial opportunity here — trust has to be rebuilt before any offer lands well.'
+  },
+  {
+    desc:'2 years tenure · One product · High engagement · No complaints · Digitally active',
+    options:['Cross-sell a relevant product','Send a retention discount','Do nothing','Escalate to service recovery'],
+    answer:'Growth Opportunity — explore a relevant complementary product',
+    why:'Healthy relationship, single product, high engagement — a textbook cross-sell moment, not a risk case.'
+  },
+  {
+    desc:'5 years tenure · Frequently compares prices · Renewal in 20 days · Average payment history',
+    options:['Generic promotional discount','Value-based communication','Ignore until renewal','Immediate service recovery'],
+    answer:'Price Sensitive — communicate value and suitable options',
+    why:'Price sensitivity calls for a value conversation, not a blanket discount or a service-recovery response.'
+  },
+];
+function buildVoting(){
+  const wrap = document.getElementById('votingScenarios');
+  wrap.innerHTML = votingData.map((v,i)=>`
+    <div class="card">
+      <p class="eyebrow" style="margin-bottom:4px;">Scenario ${i+1}</p>
+      <p>${v.desc}</p>
+      <p style="font-weight:700;margin:8px 0;">What should the insurer do?</p>
+      <div>${v.options.map(o=>`<button class="opt-btn" onclick="pickVote(this,${i})">${o}</button>`).join('')}</div>
+      <div class="reveal-box" id="voteReveal${i}"><strong>AI recommendation: ${v.answer}</strong><p style="margin-top:6px;">${v.why}</p></div>
+    </div>`).join('');
+}
+function pickVote(btn,i){
+  btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('picked'));
+  btn.classList.add('picked');
+  document.getElementById('voteReveal'+i).classList.add('show');
+}
+
+/* ============================================================
+   SCREEN 15: HUMAN VS AI
+============================================================ */
+function revealHumanAI(){ document.getElementById('humanAIReveal').classList.add('show'); }
+
+/* ============================================================
+   SCREEN 16: RESPONSIBLE AI
+============================================================ */
+function buildResponsible(){
+  const opts = ['Continue using it unchanged','Investigate the data','Validate performance across groups','Review for potential bias','Add human oversight'];
+  document.getElementById('respOptions').innerHTML = opts.map(o=>`<button class="opt-btn" onclick="pickResp(this)">${o}</button>`).join('');
+}
+function pickResp(btn){
+  btn.classList.toggle('picked');
+  document.getElementById('respReveal').classList.add('show');
+}
+
+/* ============================================================
+   SCREEN 17: SECTORS
+============================================================ */
+const SECTOR_SIGNALS = {
+  'Motor':'Renewal, premium change, claims, service experience, competitor sensitivity, policy tenure.',
+  'Health':'Claims experience, service interactions, renewal, product coverage, customer engagement.',
+  'Life':'Policy tenure, premium payment behaviour, engagement, policy maturity, product portfolio.',
+  'Property':'Claims, renewal, premium, property-related service experience.',
+  'Commercial':'Account value, claims, renewal, product relationships, service quality, account engagement.',
+};
+const SCENARIOS = [
+  {sector:'Motor',title:'Renewal-window risk',desc:'Customer 5 years with insurer, one motor policy, renewal in 12 days, recent minor claim, engagement dropping. Segment: High-Value but At Risk.'},
+  {sector:'Motor',title:'Competitor comparison signal',desc:'Customer researching competitor quotes online, price-sensitive history, average payment behaviour. Segment: Price Sensitive.'},
+  {sector:'Health',title:'Claims friction',desc:'Customer with two rejected claim queries in 60 days, declining satisfaction, no complaint filed yet. Segment: Service Recovery (early warning).'},
+  {sector:'Health',title:'Wellness cross-sell fit',desc:'Long-tenure single-product health customer, high digital engagement, healthy claims history. Segment: Growth Opportunity.'},
+  {sector:'Life',title:'Policy maturity conversation',desc:'Life policy nearing maturity, strong payment history, low recent contact. Segment: Loyal & Valuable — proactive maturity conversation needed.'},
+  {sector:'Property',title:'Post-claim trust check',desc:'Property claim after a weather event, slow claim resolution, negative sentiment in follow-up call. Segment: Service Recovery.'},
+  {sector:'Commercial',title:'Account growth signal',desc:'Commercial account with expanding operations, strong service history, only one product line in force. Segment: Growth Opportunity.'},
+  {sector:'Motor',title:'Service-triggered churn',desc:'Customer unhappy after a garage network experience, complaint logged, renewal approaching. Segment: Service Recovery.'},
+  {sector:'Health',title:'Silent drifter',desc:'Low digital activity for 6 months, no complaints, no claims, minimal response to outreach. Segment: Low Engagement.'},
+];
+function renderSectorScreen(){
+  const sector = document.getElementById('sectorSelect').value;
+  if(sector==='All sectors'){
+    document.getElementById('sectorSignalsTitle').textContent = 'Signals across all sectors';
+    document.getElementById('sectorSignalsLine').textContent = 'Every sector shares the same engine — only the weighting of signals differs.';
+  } else {
+    document.getElementById('sectorSignalsTitle').textContent = sector+' — signals that typically matter most';
+    document.getElementById('sectorSignalsLine').textContent = SECTOR_SIGNALS[sector];
+  }
+  const list = sector==='All sectors' ? SCENARIOS : SCENARIOS.filter(s=>s.sector===sector);
+  document.getElementById('scenarioLibrary').innerHTML = list.map(s=>`
+    <div class="card">
+      <span class="tag seg-growth" style="background:rgba(30,27,22,0.06);color:var(--muted);">${s.sector}</span>
+      <h3 style="margin-top:8px;">${s.title}</h3>
+      <p class="muted" style="font-size:13.5px;">${s.desc}</p>
+    </div>`).join('');
+}
+
+/* ============================================================
+   SCREEN 18: DASHBOARD
+============================================================ */
+function buildDashboard(){
+  document.getElementById('dashSampleSize').textContent = ROSTER.length;
+  const segCounts = {};
+  Object.keys(SEGMENT_META).forEach(k=>segCounts[k]=0);
+  ROSTER.forEach(c=>segCounts[c.segment]++);
+  const maxSeg = Math.max(...Object.values(segCounts));
+  document.getElementById('dashSegmentBars').innerHTML = Object.entries(segCounts).map(([seg,n])=>{
+    const meta = SEGMENT_META[seg];
+    return `<div class="bar-row"><span style="width:150px;">${seg}</span><div class="bar-track"><div class="bar-fill" style="width:${(n/maxSeg*100)}%;background:${meta.color};"></div></div><span>${n}</span></div>`;
+  }).join('');
+
+  const riskCounts = {Low:0,Medium:0,High:0};
+  ROSTER.forEach(c=>riskCounts[riskCat(c.churn).label]++);
+  const maxRisk = Math.max(...Object.values(riskCounts));
+  const riskColors = {Low:'var(--green)',Medium:'var(--amber)',High:'var(--red)'};
+  document.getElementById('dashRiskBars').innerHTML = Object.entries(riskCounts).map(([lvl,n])=>
+    `<div class="bar-row"><span style="width:150px;">${lvl} risk</span><div class="bar-track"><div class="bar-fill" style="width:${(n/maxRisk*100)}%;background:${riskColors[lvl]};"></div></div><span>${n}</span></div>`
+  ).join('');
+
+  const priority = ROSTER.filter(c=>c.valueTier==='High' && c.churn>=50).sort((a,b)=>b.churn-a.churn).slice(0,8);
+  document.getElementById('dashPriorityTable').innerHTML = priority.map(c=>{
+    const reasons = computeReasons(c,c.churn);
+    return `<tr><td>${c.name}</td><td><span class="tag ${SEGMENT_META[c.segment].cls}">${c.segment}</span></td><td>${c.churn}%</td><td>${reasons[0]?reasons[0].text:'—'}</td><td>${computeNBA(c.segment)}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" class="muted">No high-value, high-risk customers in this sample.</td></tr>';
+}
+
+/* ============================================================
+   SCREEN 19: CAMPAIGN SIMULATOR
+============================================================ */
+const CAMPAIGN_META = {
+  'Retention':{action:'Proactive retention outreach before renewal.', channel:'Relationship manager / personalized call', objective:'Reduce avoidable customer attrition'},
+  'Service Recovery':{action:'Resolve outstanding issues before any commercial contact.', channel:'Dedicated service recovery team', objective:'Rebuild trust and prevent escalation'},
+  'Cross-sell':{action:'Offer a relevant, suitable complementary product.', channel:'Digital + advisor follow-up', objective:'Deepen the relationship responsibly'},
+  'Upsell':{action:'Explore enhanced coverage within the existing product.', channel:'Digital nudge + advisor confirmation', objective:'Improve coverage fit and relationship value'},
+  'Re-engagement':{action:'Reconnect with low-activity customers before they disengage further.', channel:'Email / SMS + service check-in', objective:'Restore engagement before risk builds'},
+};
+function renderCampaign(){
+  const type = document.getElementById('campType').value;
+  const segment = document.getElementById('campSegment').value;
+  const audience = ROSTER.filter(c=>c.segment===segment).length;
+  const meta = CAMPAIGN_META[type];
+  document.getElementById('campAudience').textContent = audience+' customers';
+  document.getElementById('campAction').textContent = meta.action;
+  document.getElementById('campChannel').textContent = meta.channel;
+  document.getElementById('campObjective').textContent = meta.objective;
+}
+
+/* ============================================================
+   SCREEN SHOWN HOOK — lazy render per screen
+============================================================ */
+function onScreenShown(id){
+  if(id==='churn') renderChurnScreen();
+  if(id==='reasons') renderReasonsScreen();
+  if(id==='whatif') renderWhatIf();
+  if(id==='nba') renderNBAFree();
+  if(id==='matrix') buildMatrix();
+  if(id==='journey') setJourneyStage(0);
+  if(id==='sectors') renderSectorScreen();
+  if(id==='dashboard') buildDashboard();
+  if(id==='campaign') renderCampaign();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+function init(){
+  buildJump();
+  buildIntroPoll();
+  buildGallery();
+  buildDontSell();
+  buildVoting();
+  buildResponsible();
+  buildRoster();
+  buildRosterSelects();
+  buildNBACards();
+  loadPreset('reset');
+  render();
+}
+init();
+</script>
+</body>
+</html>
